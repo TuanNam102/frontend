@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>Store công nghệ - Tất cả sản phẩm</title>
+    <link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="logo" href="index.html">Nam<span> Shop Store</span></a>
+            <nav class="nav">
+                <a href="index.html">Trang chủ</a>
+                <a href="products.html">Tất cả sản phẩm</a>
+                <a href="index.html#featured">Nổi bật</a>
+                <a href="index.html#phones">Điện thoại</a>
+                <a href="index.html#laptops">Laptop</a>
+            </nav>
+            <div class="header-actions">
+                <input class="search" id="searchInput" placeholder="Tìm sản phẩm…" type="search"/>
+                <button class="btn small" id="searchButton" aria-label="Tìm kiếm">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+                <a aria-label="Giỏ hàng" class="cart" href="cart.html">
+                    🛒 <span class="badge" id="cartCount">0</span>
+                </a>
+            </div>
+        </div>
+    </header>
+    <main>
+        <section class="section" id="all">
+            <div class="container">
+                <div class="section-head">
+                    <h2>Tất cả sản phẩm</h2>
+                    <div class="section-actions">
+                        <select class="select" id="categoryFilter" title="Lọc danh mục">
+                            <option value="all">Tất cả danh mục</option>
+                            <option value="điện thoại">Điện thoại</option>
+                            <option value="laptop">Laptop</option>
+                        </select>
+                        <select class="select" id="sortFilter" title="Sắp xếp">
+                            <option value="">Sắp xếp theo giá</option>
+                            <option value="asc">Giá tăng dần</option>
+                            <option value="desc">Giá giảm dần</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid" id="product-all-container"></div>
+            </div>
+        </section>
+    </main>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // === Lấy các phần tử DOM ===
+        const productContainer = document.getElementById('product-all-container');
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const sortFilter = document.getElementById('sortFilter');
+        const searchButton = document.getElementById('searchButton');
+
+        // Biến để lưu trữ toàn bộ sản phẩm gốc từ API
+        let allProducts = [];
+
+        // === Hàm hiển thị sản phẩm ra giao diện ===
+        function renderProducts(productsToRender) {
+            if (!productsToRender || productsToRender.length === 0) {
+                productContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Không tìm thấy sản phẩm phù hợp.</p>';
+                return;
+            }
+
+            let html = "";
+            productsToRender.forEach(item => {
+                const formattedPrice = new Intl.NumberFormat('vi-VN').format(item.price);
+                html += `
+                    <div class="product" data-category="${item.category}">
+                        <div class="product-image">
+                            <img src="${item.image}" alt="${item.name}" onload="this.classList.add('loaded')">
+                            ${item.hot ? '<span class="product-badge">HOT</span>' : ''}
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">${item.name}</h3>
+                            <p class="product-price">${formattedPrice} ₫</p>
+                            <button class="buy-now-btn" id="addCartBtn" productId="${item.id}">Thêm vào giỏ hàng</button>
+                        </div>
+                    </div>
+                `;
+            });
+            productContainer.innerHTML = html;
+        }
+        // === Hàm chính để lọc, tìm kiếm và sắp xếp sản phẩm ===
+        function updateDisplay() {
+            const selectedCategory = categoryFilter.value;
+            const sortOrder = sortFilter.value;
+            const searchTerm = searchInput.value.toLowerCase();
+
+            let processedProducts = [...allProducts];
+
+            // 1. Lọc theo danh mục
+            if (selectedCategory !== 'all') {
+                processedProducts = processedProducts.filter(product => product.category === selectedCategory);
+            }
+
+            // 2. Lọc theo từ khóa tìm kiếm
+            if (searchTerm) {
+                processedProducts = processedProducts.filter(product => product.name.toLowerCase().includes(searchTerm));
+            }
+
+            // 3. Sắp xếp sản phẩm
+            if (sortOrder === 'asc') {
+                processedProducts.sort((a, b) => a.price - b.price);
+            } else if (sortOrder === 'desc') {
+                processedProducts.sort((a, b) => b.price - a.price);
+            }
+
+            // 4. Hiển thị kết quả cuối cùng
+            renderProducts(processedProducts);
+        }
+
+        // === Tải dữ liệu sản phẩm ban đầu ===
+        fetch('http://localhost:3000/products')
+            .then(response => response.json())
+            .then(data => {
+                allProducts = data;
+                updateDisplay();
+            })
+            .catch(error => {
+                console.error('Lỗi khi tải sản phẩm:', error);
+                productContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Không thể tải sản phẩm.</p>';
+            });
+
+        // === Gán sự kiện ===
+        categoryFilter.addEventListener('change', updateDisplay);
+        sortFilter.addEventListener('change', updateDisplay);
+        searchInput.addEventListener('input', updateDisplay);
+
+        if (searchButton) {
+            searchButton.addEventListener('click', function() {
+                updateDisplay();
+            });
+        }
+    });
+    </script>
+
+</body>
+</html>

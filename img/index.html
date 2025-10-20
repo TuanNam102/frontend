@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh sách sản phẩm</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Danh sách sản phẩm</h1>
+    <div class="btn-group">
+      <button class="btn" onclick="filterProducts('all')">Tất cả</button>
+      <button class="btn" onclick="filterProducts('men\'s clothing')">Nam</button>
+      <button class="btn" onclick="filterProducts('women\'s clothing')">Nữ</button>
+      <button class="btn" onclick="filterProducts('electronics')">Điện tử</button>
+      <button class="btn" onclick="filterProducts('jewelery')">Trang sức</button>
+    </div>
+    <div id="content"></div>
+  </div>
+
+  <script>
+    const content = document.getElementById('content');
+    let productsData = [];
+
+    // Lấy dữ liệu tất cả sản phẩm
+    fetch('http://localhost:3000/products')
+      .then(response => response.json())
+      .then(data => {
+        productsData = data;
+        renderProducts(productsData);
+      });
+
+    // Hàm hiển thị sản phẩm trong khung content
+    function renderProducts(products) {
+      content.innerHTML = products.map(product => `
+        <div class="product" data-category="${product.category}">
+          <h2>${product.title}</h2>
+          <p>Price: $${product.price}</p>
+          <img src="${product.image}" alt="${product.title}" />
+        </div>
+      `).join('');
+    }
+
+    // Hàm lọc sản phẩm theo danh mục
+    function filterProducts(category) {
+      if(category === 'all') {
+        renderProducts(productsData);
+      } else {
+        const filtered = productsData.filter(p => p.category === category);
+        renderProducts(filtered);
+      }
+    }
+  </script>
+</body>
+</html>
